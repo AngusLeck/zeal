@@ -1,33 +1,11 @@
-# Basic TS Project
+# Simulate with Zeal!
 
-## Set Up
+A collection of useful simulations to understand the fantasy world that is the setting for Zeal.
 
-### Dependencies
+# Dependencies
 
-- Node
-- yarn
+This project uses
 
-### Initialise Project
-
-1. install dependencies `yarn`
-2. lint and test `yarn validate`
-3. run greeting script `yarn do greetings`
-
-## How To Use
-
-### Scripts
-
-Need some code to be executable from the command line?
-
-1. put your script in the `src/scripts` directory
-2. run it with `yarn do <file name>`
-
-### Tests
-
-To test your code:
-
-1. create a directory `tests` near whatever you want to test
-2. create a test file `<thing you want to test>.test.ts`
-3. the tests in this directory use `Jest` so when testing code remember to `describe` what `it` should do.
-4. to run a specific test file run `yarn test <file>`
-5. to run all tests run `yarn test`
+1. [three.js](https://threejs.org/) to render 3D models
+2. [vite](https://vitejs.dev/) as a build tool for web development
+3. [typescript](https://www.typescriptlang.org/) for dynamic scripting
