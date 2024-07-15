@@ -26,14 +26,14 @@ let paused = false;
 let speed = 1;
 
 const loader = new THREE.TextureLoader();
-const jupiterTexture = loader.load("./static/jupiter/textures/texture.jpeg");
+const jupiterTexture = loader.load("./public/jupiter/textures/texture.jpeg");
 
 const jupiterMaterial = new THREE.MeshPhysicalMaterial({
   map: jupiterTexture,
 });
 
 const earthTexture = loader.load(
-  "./static/earth/textures/Material.001_baseColor.jpeg"
+  "./public/earth/textures/Material.001_baseColor.jpeg"
 );
 
 const earthMaterial = new THREE.MeshPhysicalMaterial({
