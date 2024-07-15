@@ -35,7 +35,7 @@ const jupiterMaterial = new THREE.MeshPhysicalMaterial({
 });
 
 const earthTexture = loader.load(
-  "/docs/assets/earth/textures/Material.001_baseColor.jpeg"
+  "https://github.com/AngusLeck/zeal/blob/gh-pages/docs/assets/jupiter/textures/texture.jpeg"
 );
 
 const earthMaterial = new THREE.MeshPhysicalMaterial({
