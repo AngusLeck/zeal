@@ -1,6 +1,7 @@
 import * as THREE from "three";
 
 import Stats from "three/examples/jsm/libs/stats.module";
+import { BodyOnRails, Satellite } from "./BodyOnRails";
 
 // screen variables
 let SCREEN_WIDTH = window.innerWidth;
@@ -14,22 +15,154 @@ let container, stats: Stats;
 let camera: THREE.PerspectiveCamera;
 let scene: THREE.Scene;
 let renderer: THREE.WebGLRenderer;
-let mesh: THREE.Object3D<THREE.Object3DEventMap>;
 
-// cameraRig variables
+// camera variables
 let cameraRig: THREE.Object3D<THREE.Object3DEventMap>;
-let activeCamera: THREE.Camera;
-let activeHelper: THREE.CameraHelper;
-
-// cameraPerspective variables
 let cameraPerspective: THREE.PerspectiveCamera;
-let cameraOrtho: THREE.OrthographicCamera;
-
-// cameraPerspectiveHelper variables
 let cameraPerspectiveHelper: THREE.CameraHelper;
-let cameraOrthoHelper: THREE.CameraHelper;
 
-const frustumSize = 600;
+const loader = new THREE.TextureLoader();
+const jupiterTexture = loader.load("./static/jupiter/textures/texture.jpeg");
+
+const jupiterMaterial = new THREE.MeshPhysicalMaterial({
+  map: jupiterTexture,
+});
+
+const earthTexture = loader.load(
+  "./static/earth/textures/Material.001_baseColor.jpeg"
+);
+
+const earthMaterial = new THREE.MeshPhysicalMaterial({
+  map: earthTexture,
+  depthTest: true,
+  depthWrite: true,
+});
+
+const phase = 2;
+const elevation = 6e3;
+const cities: Satellite[] = [
+  {
+    body: new BodyOnRails(
+      {
+        color: "red",
+        emissiveIntensity: 1,
+        mass: 10,
+        radius: 1,
+      },
+      []
+    ),
+    radius: 6e6 + elevation,
+    plane: "perpendicular",
+    geostationary: true,
+    phase: phase,
+  },
+  {
+    body: new BodyOnRails(
+      {
+        color: "blue",
+        emissiveIntensity: 1,
+        mass: 10,
+        radius: 1,
+      },
+      []
+    ),
+    radius: 6e6 + 3 * elevation,
+    plane: "perpendicular",
+    geostationary: true,
+    phase: phase + 0.01,
+  },
+];
+
+const E = new BodyOnRails(
+  { radius: 6e6, mass: 1e28 },
+  cities,
+  earthMaterial,
+  60 * 60 * 24
+);
+
+const J = new BodyOnRails(
+  { radius: 1.5e8, mass: 1e29 },
+  [
+    {
+      body: E,
+      radius: 5e8,
+      direction: "clockwise",
+      plane: "perpendicular",
+      phase: 0,
+      tidallyLocked: true,
+    },
+  ],
+  jupiterMaterial
+);
+
+E.castShadow = true;
+E.receiveShadow = true;
+J.castShadow = true;
+J.receiveShadow = true;
+
+const system = new BodyOnRails(
+  { radius: 6e8, mass: 2e30, color: "wheat", emissiveIntensity: 1.2 },
+  [
+    {
+      body: J,
+      radius: 9e9,
+      direction: "clockwise",
+      plane: "coplanar",
+      phase: 0,
+    },
+    {
+      body: new BodyOnRails({ radius: 2e8, mass: 2e29 }, [
+        {
+          body: new BodyOnRails({ radius: 1e7, mass: 1e28 }),
+          radius: 3e8,
+          direction: "clockwise",
+          plane: "coplanar",
+          phase: 0,
+        },
+        {
+          body: new BodyOnRails({ radius: 2e7, mass: 1e28 }),
+          radius: 4e8,
+          direction: "clockwise",
+          plane: "coplanar",
+          phase: 0,
+        },
+        {
+          body: new BodyOnRails({ radius: 6e6, mass: 1e28 }),
+          radius: 5e8,
+          direction: "clockwise",
+          plane: "coplanar",
+          phase: 0,
+        },
+      ]),
+      radius: 6e9,
+      direction: "clockwise",
+      plane: "coplanar",
+      phase: 2,
+    },
+    {
+      body: new BodyOnRails({ radius: 6e7, mass: 2e28 }, [
+        {
+          body: new BodyOnRails({ radius: 5e6, mass: 1e27 }),
+          radius: 5e8,
+          direction: "clockwise",
+          plane: "coplanar",
+          phase: 0,
+        },
+        {
+          body: new BodyOnRails({ radius: 6e6, mass: 1e27 }),
+          radius: 5e8,
+          direction: "clockwise",
+          plane: "coplanar",
+          phase: 4,
+        },
+      ]),
+      radius: 4e9,
+      direction: "clockwise",
+      plane: "coplanar",
+      phase: 1,
+    },
+  ]
+);
 
 init();
 
@@ -39,67 +172,50 @@ function init(): void {
 
   scene = new THREE.Scene();
 
+  scene.castShadow = true;
+
   //
 
-  camera = new THREE.PerspectiveCamera(50, 0.5 * aspect, 1, 10000);
-  camera.position.z = 2500;
+  camera = new THREE.PerspectiveCamera(50, aspect / 2, 1, 10000);
+  camera.position.z = 2400;
 
-  cameraPerspective = new THREE.PerspectiveCamera(50, 0.5 * aspect, 150, 1000);
+  cameraPerspective = new THREE.PerspectiveCamera(50, aspect, 150, 1000);
 
   cameraPerspectiveHelper = new THREE.CameraHelper(cameraPerspective);
   scene.add(cameraPerspectiveHelper);
 
   //
-  cameraOrtho = new THREE.OrthographicCamera(
-    (0.5 * frustumSize * aspect) / -2,
-    (0.5 * frustumSize * aspect) / 2,
-    frustumSize / 2,
-    frustumSize / -2,
-    150,
-    1000
-  );
-
-  cameraOrthoHelper = new THREE.CameraHelper(cameraOrtho);
-  scene.add(cameraOrthoHelper);
-
-  //
-
-  activeCamera = cameraPerspective;
-  activeHelper = cameraPerspectiveHelper;
 
   // counteract different front orientation of cameras vs rig
 
-  cameraOrtho.rotation.y = Math.PI;
   cameraPerspective.rotation.y = Math.PI;
+  cameraPerspective.rotation.z = (3 * Math.PI) / 2;
 
   cameraRig = new THREE.Group();
 
   cameraRig.add(cameraPerspective);
-  cameraRig.add(cameraOrtho);
 
   scene.add(cameraRig);
 
   //
 
-  mesh = new THREE.Mesh(
-    new THREE.SphereGeometry(100, 16, 8),
-    new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true })
-  );
-  scene.add(mesh);
+  system.addToScene(scene);
 
-  const mesh2 = new THREE.Mesh(
-    new THREE.SphereGeometry(50, 16, 8),
-    new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true })
-  );
-  mesh2.position.y = 150;
-  mesh.add(mesh2);
+  //
 
-  const mesh3 = new THREE.Mesh(
-    new THREE.SphereGeometry(5, 16, 8),
-    new THREE.MeshBasicMaterial({ color: 0x0000ff, wireframe: true })
-  );
-  mesh3.position.z = 150;
-  cameraRig.add(mesh3);
+  const light = new THREE.PointLight(0xff8822, 80);
+  J.add(light);
+
+  const dirlight = new THREE.SpotLight(0xffffff, 1000000);
+
+  dirlight.target = J;
+  dirlight.castShadow = true;
+  dirlight.shadow.mapSize.width = 100000;
+  dirlight.shadow.mapSize.height = 100000;
+  dirlight.shadow.camera.near = 500;
+  dirlight.shadow.camera.far = 1000;
+
+  scene.add(dirlight);
 
   //
 
@@ -119,13 +235,15 @@ function init(): void {
 
   const particles = new THREE.Points(
     geometry,
-    new THREE.PointsMaterial({ color: 0x888888 })
+    new THREE.PointsMaterial({ color: 0x333333 })
   );
   scene.add(particles);
 
   //
 
   renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
   renderer.setAnimationLoop(animate);
@@ -141,26 +259,6 @@ function init(): void {
   //
 
   window.addEventListener("resize", onWindowResize);
-  document.addEventListener("keydown", onKeyDown);
-}
-
-//
-
-function onKeyDown(event: KeyboardEvent): void {
-  console.log(JSON.stringify(event));
-  switch (event.keyCode) {
-    case 79 /*O*/:
-      activeCamera = cameraOrtho;
-      activeHelper = cameraOrthoHelper;
-
-      break;
-
-    case 80 /*P*/:
-      activeCamera = cameraPerspective;
-      activeHelper = cameraPerspectiveHelper;
-
-      break;
-  }
 }
 
 //
@@ -177,12 +275,6 @@ function onWindowResize(): void {
 
   cameraPerspective.aspect = 0.5 * aspect;
   cameraPerspective.updateProjectionMatrix();
-
-  cameraOrtho.left = (-0.5 * frustumSize * aspect) / 2;
-  cameraOrtho.right = (0.5 * frustumSize * aspect) / 2;
-  cameraOrtho.top = frustumSize / 2;
-  cameraOrtho.bottom = -frustumSize / 2;
-  cameraOrtho.updateProjectionMatrix();
 }
 
 //
@@ -193,51 +285,44 @@ function animate(): void {
 }
 
 function render(): void {
-  const r = Date.now() * 0.0005;
+  //   const r = 1509 + (((Date.now() / 1000) % 10) - 5);
+  const r = Date.now() / 1000;
 
-  mesh.position.x = 700 * Math.cos(r);
-  mesh.position.z = 700 * Math.sin(r);
-  mesh.position.y = 700 * Math.sin(r);
+  system.animate(r);
 
-  mesh.children[0].position.x = 70 * Math.cos(2 * r);
-  mesh.children[0].position.z = 70 * Math.sin(r);
+  cameraPerspective.fov = 80;
+  cameraPerspective.near = 0.001;
+  cameraPerspective.far = 1000;
+  cameraPerspective.updateProjectionMatrix();
 
-  if (activeCamera === cameraPerspective) {
-    cameraPerspective.fov = 35 + 30 * Math.sin(0.5 * r);
-    cameraPerspective.far = mesh.position.length();
-    cameraPerspective.updateProjectionMatrix();
+  cameraPerspectiveHelper.update();
+  cameraPerspectiveHelper.visible = false;
 
-    cameraPerspectiveHelper.update();
-    cameraPerspectiveHelper.visible = true;
+  cameraRig.position.x = cities[0].body.position.x;
+  cameraRig.position.y = cities[0].body.position.y;
+  cameraRig.position.z = cities[0].body.position.z;
 
-    cameraOrthoHelper.visible = false;
-  } else {
-    cameraOrtho.far = mesh.position.length();
-    cameraOrtho.updateProjectionMatrix();
-
-    cameraOrthoHelper.update();
-    cameraOrthoHelper.visible = true;
-
-    cameraPerspectiveHelper.visible = false;
-  }
-
-  cameraRig.lookAt(mesh.position);
-
-  //
-
-  activeHelper.visible = false;
+  cameraRig.lookAt(cities[1].body.position);
 
   renderer.setClearColor(0x000000, 1);
-  renderer.setScissor(0, 0, SCREEN_WIDTH / 2, SCREEN_HEIGHT);
-  renderer.setViewport(0, 0, SCREEN_WIDTH / 2, SCREEN_HEIGHT);
-  renderer.render(scene, activeCamera);
+  renderer.setScissor(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+  renderer.setViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+  renderer.render(scene, cameraPerspective);
 
   //
 
-  activeHelper.visible = true;
-
   renderer.setClearColor(0x111111, 1);
-  renderer.setScissor(SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2, SCREEN_HEIGHT);
-  renderer.setViewport(SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2, SCREEN_HEIGHT);
+  renderer.setScissor(
+    (7 * SCREEN_WIDTH) / 8,
+    0,
+    SCREEN_WIDTH / 8,
+    SCREEN_HEIGHT / 4
+  );
+  renderer.setViewport(
+    (7 * SCREEN_WIDTH) / 8,
+    0,
+    SCREEN_WIDTH / 8,
+    SCREEN_HEIGHT / 4
+  );
   renderer.render(scene, camera);
 }
