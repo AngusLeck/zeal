@@ -37,8 +37,11 @@ const earthMaterial = new THREE.MeshPhysicalMaterial({
   depthWrite: true,
 });
 
-const phase = 2;
+const phase = 2.1;
 const elevation = 6e3;
+const impossibleDisplacement = 2000e3;
+const correction = impossibleDisplacement * 0.174;
+
 const cities: Satellite[] = [
   {
     body: new BodyOnRails(
@@ -50,10 +53,11 @@ const cities: Satellite[] = [
       },
       []
     ),
-    radius: 6e6 + elevation,
+    radius: 6e6 - correction + elevation,
     plane: "perpendicular",
     geostationary: true,
     phase: phase,
+    impossibleDisplacement,
   },
   {
     body: new BodyOnRails(
@@ -65,10 +69,11 @@ const cities: Satellite[] = [
       },
       []
     ),
-    radius: 6e6 + 4 * elevation,
+    radius: 6e6 - correction + elevation * 6,
     plane: "perpendicular",
     geostationary: true,
     phase: phase + 0.01,
+    impossibleDisplacement,
   },
 ];
 
@@ -176,8 +181,6 @@ function init(): void {
 
   scene.castShadow = true;
 
-  //
-
   camera = new THREE.PerspectiveCamera(60, aspect / 2, 1, 10000);
   camera.position.z = 50;
 
@@ -186,12 +189,10 @@ function init(): void {
   cameraPerspectiveHelper = new THREE.CameraHelper(cameraPerspective);
   scene.add(cameraPerspectiveHelper);
 
-  //
-
   // counteract different front orientation of cameras vs rig
 
   cameraPerspective.rotation.y = Math.PI;
-  cameraPerspective.rotation.z = (3 * Math.PI) / 2;
+  cameraPerspective.rotation.z = (-38 * Math.PI) / 100;
 
   cameraRig = new THREE.Group();
 
@@ -199,11 +200,7 @@ function init(): void {
 
   scene.add(cameraRig);
 
-  //
-
   system.addToScene(scene);
-
-  //
 
   const jupiterLight = new THREE.PointLight(0xff8822, 30);
   J.add(jupiterLight);
@@ -218,8 +215,6 @@ function init(): void {
   dirlight.shadow.camera.far = 10000;
 
   scene.add(dirlight);
-
-  //
 
   const geometry = new THREE.BufferGeometry();
   const vertices = [];
@@ -241,8 +236,6 @@ function init(): void {
   );
   scene.add(particles);
 
-  //
-
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -253,12 +246,8 @@ function init(): void {
 
   renderer.setScissorTest(true);
 
-  //
-
   window.addEventListener("resize", onWindowResize);
 }
-
-//
 
 function onWindowResize(): void {
   SCREEN_WIDTH = window.innerWidth;
@@ -274,13 +263,7 @@ function onWindowResize(): void {
   cameraPerspective.updateProjectionMatrix();
 }
 
-//
-
 function animate(): void {
-  render();
-}
-
-function render(): void {
   //   const r = 1509 + (((Date.now() / 1000) % 10) - 5);
   const r = Date.now() / 1000;
 
@@ -307,8 +290,6 @@ function render(): void {
   renderer.setScissor(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
   renderer.setViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
   renderer.render(scene, cameraPerspective);
-
-  //
 
   renderer.setClearColor(0x111111, 1);
   renderer.setScissor(

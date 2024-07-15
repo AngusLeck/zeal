@@ -26,6 +26,7 @@ export interface Satellite {
   period?: number;
   geostationary?: boolean;
   tidallyLocked?: boolean;
+  impossibleDisplacement?: number;
 }
 
 export class BodyOnRails extends Mesh {
@@ -89,8 +90,15 @@ export class BodyOnRails extends Mesh {
       (-2 * Math.PI * scaledTime) / this.day
     );
 
-    for (const { body, radius, phase, direction, plane, period } of this
-      .satellites) {
+    for (const {
+      body,
+      radius,
+      phase,
+      direction,
+      plane,
+      period,
+      impossibleDisplacement,
+    } of this.satellites) {
       const orbitDirection = direction === "anticlockwise" ? -1 : 1;
       const signedTime = orbitDirection * scaledTime;
       const twoPiOnPeriod = period ? (2 * Math.PI) / period : 1;
@@ -105,14 +113,16 @@ export class BodyOnRails extends Mesh {
       switch (plane) {
         case "perpendicular":
           body.position.x = this.position.x + X;
-          body.position.y = this.position.y;
+          body.position.y =
+            this.position.y + (impossibleDisplacement ?? 0) / lengthScale;
           body.position.z = this.position.z + Y;
           break;
         case "coplanar":
         default:
           body.position.x = this.position.x + X;
           body.position.y = this.position.y + Y;
-          body.position.z = this.position.z;
+          body.position.z =
+            this.position.z + (impossibleDisplacement ?? 0) / lengthScale;
           break;
       }
 
