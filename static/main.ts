@@ -45,9 +45,9 @@ const cities: Satellite[] = [
     body: new BodyOnRails(
       {
         color: "red",
-        emissiveIntensity: 1,
+        emissiveIntensity: 100,
         mass: 10,
-        radius: 1,
+        radius: 1e6,
       },
       []
     ),
@@ -66,7 +66,7 @@ const cities: Satellite[] = [
       },
       []
     ),
-    radius: 6e6 + 3 * elevation,
+    radius: 6e6 + 4 * elevation,
     plane: "perpendicular",
     geostationary: true,
     phase: phase + 0.01,
@@ -81,11 +81,11 @@ const E = new BodyOnRails(
 );
 
 const J = new BodyOnRails(
-  { radius: 1.5e8, mass: 1e29 },
+  { radius: 7e7, mass: 1e29 },
   [
     {
       body: E,
-      radius: 5e8,
+      radius: 2e8,
       direction: "clockwise",
       plane: "perpendicular",
       phase: 0,
@@ -105,13 +105,13 @@ const system = new BodyOnRails(
   [
     {
       body: J,
-      radius: 9e9,
+      radius: 8 * 60e8,
       direction: "clockwise",
       plane: "coplanar",
       phase: 0,
     },
     {
-      body: new BodyOnRails({ radius: 2e8, mass: 2e29 }, [
+      body: new BodyOnRails({ radius: 2e7, mass: 2e29 }, [
         {
           body: new BodyOnRails({ radius: 1e7, mass: 1e28 }),
           radius: 3e8,
@@ -140,7 +140,7 @@ const system = new BodyOnRails(
       phase: 2,
     },
     {
-      body: new BodyOnRails({ radius: 6e7, mass: 2e28 }, [
+      body: new BodyOnRails({ radius: 4e7, mass: 2e28 }, [
         {
           body: new BodyOnRails({ radius: 5e6, mass: 1e27 }),
           radius: 5e8,
@@ -149,7 +149,7 @@ const system = new BodyOnRails(
           phase: 0,
         },
         {
-          body: new BodyOnRails({ radius: 6e6, mass: 1e27 }),
+          body: new BodyOnRails({ radius: 3e6, mass: 1e27 }),
           radius: 5e8,
           direction: "clockwise",
           plane: "coplanar",
@@ -176,8 +176,8 @@ function init(): void {
 
   //
 
-  camera = new THREE.PerspectiveCamera(50, aspect / 2, 1, 10000);
-  camera.position.z = 2400;
+  camera = new THREE.PerspectiveCamera(60, aspect / 2, 1, 10000);
+  camera.position.z = 50;
 
   cameraPerspective = new THREE.PerspectiveCamera(50, aspect, 150, 1000);
 
@@ -203,17 +203,17 @@ function init(): void {
 
   //
 
-  const light = new THREE.PointLight(0xff8822, 80);
+  const light = new THREE.PointLight(0xff8822, 60);
   J.add(light);
 
-  const dirlight = new THREE.SpotLight(0xffffff, 1000000);
+  const dirlight = new THREE.SpotLight(0xffffff, 20000000, 0, Math.PI / 50);
 
   dirlight.target = J;
   dirlight.castShadow = true;
-  dirlight.shadow.mapSize.width = 100000;
-  dirlight.shadow.mapSize.height = 100000;
+  dirlight.shadow.mapSize.width = 500000000;
+  dirlight.shadow.mapSize.height = 500000000;
   dirlight.shadow.camera.near = 500;
-  dirlight.shadow.camera.far = 1000;
+  dirlight.shadow.camera.far = 10000;
 
   scene.add(dirlight);
 
@@ -222,10 +222,10 @@ function init(): void {
   const geometry = new THREE.BufferGeometry();
   const vertices = [];
 
-  for (let i = 0; i < 10000; i++) {
-    vertices.push(THREE.MathUtils.randFloatSpread(2000)); // x
-    vertices.push(THREE.MathUtils.randFloatSpread(2000)); // y
-    vertices.push(THREE.MathUtils.randFloatSpread(2000)); // z
+  for (let i = 0; i < 30000; i++) {
+    vertices.push(THREE.MathUtils.randFloatSpread(30000)); // x
+    vertices.push(THREE.MathUtils.randFloatSpread(30000)); // y
+    vertices.push(THREE.MathUtils.randFloatSpread(30000)); // z
   }
 
   geometry.setAttribute(
@@ -235,7 +235,7 @@ function init(): void {
 
   const particles = new THREE.Points(
     geometry,
-    new THREE.PointsMaterial({ color: 0x333333 })
+    new THREE.PointsMaterial({ color: 0x999999 })
   );
   scene.add(particles);
 
@@ -291,12 +291,15 @@ function render(): void {
   system.animate(r);
 
   cameraPerspective.fov = 80;
-  cameraPerspective.near = 0.001;
-  cameraPerspective.far = 1000;
+  cameraPerspective.near = 0.0001;
+  cameraPerspective.far = 20000;
   cameraPerspective.updateProjectionMatrix();
 
   cameraPerspectiveHelper.update();
   cameraPerspectiveHelper.visible = false;
+
+  camera.position.x = J.position.x;
+  camera.position.y = J.position.y;
 
   cameraRig.position.x = cities[0].body.position.x;
   cameraRig.position.y = cities[0].body.position.y;
