@@ -1,6 +1,5 @@
 import * as THREE from "three";
 
-import Stats from "three/examples/jsm/libs/stats.module";
 import { BodyOnRails, Satellite } from "./BodyOnRails";
 
 // screen variables
@@ -9,7 +8,7 @@ let SCREEN_HEIGHT = window.innerHeight;
 let aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
 
 // container variables
-let container, stats: Stats;
+let container;
 
 // camera variables
 let camera: THREE.PerspectiveCamera;
@@ -77,7 +76,8 @@ const E = new BodyOnRails(
   { radius: 6e6, mass: 1e28 },
   cities,
   earthMaterial,
-  60 * 60 * 24
+  60 * 60 * 24,
+  120
 );
 
 const J = new BodyOnRails(
@@ -92,7 +92,9 @@ const J = new BodyOnRails(
       tidallyLocked: true,
     },
   ],
-  jupiterMaterial
+  jupiterMaterial,
+  60 * 60 * 16,
+  50
 );
 
 E.castShadow = true;
@@ -203,8 +205,8 @@ function init(): void {
 
   //
 
-  const light = new THREE.PointLight(0xff8822, 60);
-  J.add(light);
+  const jupiterLight = new THREE.PointLight(0xff8822, 30);
+  J.add(jupiterLight);
 
   const dirlight = new THREE.SpotLight(0xffffff, 20000000, 0, Math.PI / 50);
 
@@ -253,11 +255,6 @@ function init(): void {
 
   //
 
-  stats = new Stats();
-  container.appendChild(stats.dom);
-
-  //
-
   window.addEventListener("resize", onWindowResize);
 }
 
@@ -281,7 +278,6 @@ function onWindowResize(): void {
 
 function animate(): void {
   render();
-  stats.update();
 }
 
 function render(): void {

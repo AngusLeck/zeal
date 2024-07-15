@@ -53,10 +53,15 @@ export class BodyOnRails extends Mesh {
     },
     private satellites: Satellite[] = [],
     material?: Material,
-    private day: number = Math.random() * 60 * 60 * 48
+    private day = Math.random() * 60 * 60 * 48,
+    heightSegments = 30
   ) {
     super(
-      new SphereGeometry(radius / lengthScale, 100, 50),
+      new SphereGeometry(
+        radius / lengthScale,
+        heightSegments * 2,
+        heightSegments
+      ),
       material ??
         new MeshStandardMaterial({
           color: color ?? colors[Math.trunc(Math.random() * colors.length)],
