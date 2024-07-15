@@ -68,7 +68,7 @@ export class BodyOnRails extends Mesh {
           color: color ?? colors[Math.trunc(Math.random() * colors.length)],
           wireframe: false,
           emissive: color ?? colors[Math.trunc(Math.random() * colors.length)],
-          emissiveIntensity: emissiveIntensity ?? 0.1,
+          emissiveIntensity: emissiveIntensity ?? 1,
         })
     );
 

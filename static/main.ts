@@ -20,6 +20,11 @@ let cameraRig: THREE.Object3D<THREE.Object3DEventMap>;
 let cameraPerspective: THREE.PerspectiveCamera;
 let cameraPerspectiveHelper: THREE.CameraHelper;
 
+// time in seconds
+let time = 0;
+let paused = false;
+let speed = 1;
+
 const loader = new THREE.TextureLoader();
 const jupiterTexture = loader.load("./static/jupiter/textures/texture.jpeg");
 
@@ -202,15 +207,15 @@ function init(): void {
 
   system.addToScene(scene);
 
-  const jupiterLight = new THREE.PointLight(0xff8822, 30);
+  const jupiterLight = new THREE.PointLight(0xff8822, 20);
   J.add(jupiterLight);
 
-  const dirlight = new THREE.SpotLight(0xffffff, 20000000, 0, Math.PI / 50);
+  const dirlight = new THREE.SpotLight(0xffffff, 20000000, 0, Math.PI / 500);
 
   dirlight.target = J;
   dirlight.castShadow = true;
-  dirlight.shadow.mapSize.width = 500000000;
-  dirlight.shadow.mapSize.height = 500000000;
+  dirlight.shadow.mapSize.width = 1000;
+  dirlight.shadow.mapSize.height = 1000;
   dirlight.shadow.camera.near = 500;
   dirlight.shadow.camera.far = 10000;
 
@@ -247,6 +252,29 @@ function init(): void {
   renderer.setScissorTest(true);
 
   window.addEventListener("resize", onWindowResize);
+  document.addEventListener("keydown", onKeyDown);
+}
+
+//
+
+function onKeyDown(event: KeyboardEvent): void {
+  console.log(JSON.stringify(event));
+  switch (event.key) {
+    case " ":
+      paused = !paused;
+      break;
+    case "ArrowUp":
+      speed = speed * 2;
+      break;
+    case "ArrowDown":
+      speed = speed / 2;
+      break;
+    case "ArrowRight":
+      time += 0.5 * speed;
+      break;
+    case "ArrowLeft":
+      time -= 0.5 * speed;
+  }
 }
 
 function onWindowResize(): void {
@@ -265,9 +293,10 @@ function onWindowResize(): void {
 
 function animate(): void {
   //   const r = 1509 + (((Date.now() / 1000) % 10) - 5);
-  const r = Date.now() / 1000;
 
-  system.animate(r);
+  time += paused ? 0 : 0.05 * speed;
+
+  system.animate(time);
 
   cameraPerspective.fov = 80;
   cameraPerspective.near = 0.0001;
