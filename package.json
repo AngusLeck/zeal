@@ -1,5 +1,8 @@
 {
+  "homepage": "https://angusleck.github.io/zeal/",
   "scripts": {
+    "predeploy" : "yarn vite build",
+    "deploy" : "gh-pages -d dist",
     "do": "cd src/scripts && ts-node",
     "test": "jest",
     "lint": "concurrently yarn:lint:*",
@@ -27,6 +30,7 @@
     "eslint-config-prettier": "8.5.0",
     "eslint-plugin-etc": "^2.0.2",
     "eslint-plugin-prettier": "4.0.0",
+    "gh-pages": "^6.1.1",
     "jest": "^27.5.1",
     "prettier": "2.5.1",
     "ts-jest": "^27.1.3",
