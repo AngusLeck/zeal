@@ -21,7 +21,8 @@ let cameraPerspective: THREE.PerspectiveCamera;
 let cameraPerspectiveHelper: THREE.CameraHelper;
 
 // time in seconds
-let time = 0;
+let animationTime = 0;
+let realTime = Date.now();
 let paused = false;
 let speed = 1;
 
@@ -268,10 +269,10 @@ function onKeyDown(event: KeyboardEvent): void {
       speed = speed / 2;
       break;
     case "ArrowRight":
-      time += 0.5 * speed;
+      animationTime += 0.5 * speed;
       break;
     case "ArrowLeft":
-      time -= 0.5 * speed;
+      animationTime -= 0.5 * speed;
   }
 }
 
@@ -285,16 +286,20 @@ function onWindowResize(): void {
   camera.aspect = 0.5 * aspect;
   camera.updateProjectionMatrix();
 
-  cameraPerspective.aspect = 0.5 * aspect;
+  cameraPerspective.aspect = aspect;
   cameraPerspective.updateProjectionMatrix();
 }
 
 function animate(): void {
   //   const r = 1509 + (((Date.now() / 1000) % 10) - 5);
 
-  time += paused ? 0 : 0.05 * speed;
+  const currentTime = Date.now();
+  const delta = (currentTime - realTime) / 1000;
+  realTime = currentTime;
 
-  system.animate(time);
+  animationTime += paused ? 0 : delta * speed;
+
+  system.animate(animationTime);
 
   cameraPerspective.fov = 80;
   cameraPerspective.near = 0.0001;

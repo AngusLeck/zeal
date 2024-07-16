@@ -1,8 +1,9 @@
 {
   "homepage": "https://angusleck.github.io/zeal/",
   "scripts": {
-    "predeploy" : "yarn vite build",
-    "deploy" : "gh-pages -d dist",
+    "predeploy": "yarn vite build",
+    "deploy": "gh-pages -d dist",
+    "start": "vite -c 'vite.dev.config.js'",
     "do": "cd src/scripts && ts-node",
     "test": "jest",
     "lint": "concurrently yarn:lint:*",
