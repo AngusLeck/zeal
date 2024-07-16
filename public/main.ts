@@ -325,10 +325,11 @@ function onWindowResize(): void {
 
   renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
 
-  camera.aspect = 0.5 * aspect;
+  camera.aspect = aspect > 1 ? 0.5 * aspect : aspect;
   camera.updateProjectionMatrix();
 
   cameraPerspective.aspect = aspect;
+  cameraPerspective.fov = aspect > 1 ? 60 : 90;
   cameraPerspective.updateProjectionMatrix();
 }
 
@@ -440,18 +441,15 @@ function animate(): void {
       dayPercentage;
   }
 
+  const zoomedOutSceneParams: [number, number, number, number] = [
+    aspect > 1 ? (7 * SCREEN_WIDTH) / 8 : (3 * SCREEN_WIDTH) / 4,
+    0,
+    aspect > 1 ? SCREEN_WIDTH / 8 : SCREEN_WIDTH / 4,
+    SCREEN_HEIGHT / 4,
+  ];
+
   renderer.setClearColor(0x000000, 1);
-  renderer.setScissor(
-    (7 * SCREEN_WIDTH) / 8,
-    0,
-    SCREEN_WIDTH / 8,
-    SCREEN_HEIGHT / 4
-  );
-  renderer.setViewport(
-    (7 * SCREEN_WIDTH) / 8,
-    0,
-    SCREEN_WIDTH / 8,
-    SCREEN_HEIGHT / 4
-  );
+  renderer.setScissor(...zoomedOutSceneParams);
+  renderer.setViewport(...zoomedOutSceneParams);
   renderer.render(scene, camera);
 }
