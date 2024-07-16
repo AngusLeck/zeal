@@ -1,3 +1,4 @@
+/* eslint-disable etc/prefer-less-than */
 import * as THREE from "three";
 
 import { BodyOnRails, Satellite } from "./BodyOnRails";
@@ -6,6 +7,10 @@ import { BodyOnRails, Satellite } from "./BodyOnRails";
 let SCREEN_WIDTH = window.innerWidth;
 let SCREEN_HEIGHT = window.innerHeight;
 let aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
+
+//mouse variables
+let mouseX = 0;
+let mouseY = 0;
 
 // container variables
 let container;
@@ -16,9 +21,11 @@ let scene: THREE.Scene;
 let renderer: THREE.WebGLRenderer;
 
 // camera variables
-let cameraRig: THREE.Object3D<THREE.Object3DEventMap>;
+let cameraRig: THREE.Group;
 let cameraPerspective: THREE.PerspectiveCamera;
 let cameraPerspectiveHelper: THREE.CameraHelper;
+let cameraPanX = 90;
+let cameraPanY = 30;
 
 // time in seconds
 let animationTime = 0;
@@ -188,17 +195,19 @@ function init(): void {
   camera = new THREE.PerspectiveCamera(60, aspect / 2, 1, 10000);
   camera.position.z = 50;
 
-  cameraPerspective = new THREE.PerspectiveCamera(50, aspect, 150, 1000);
-
+  cameraRig = new THREE.Group();
+  cameraPerspective = new THREE.PerspectiveCamera(60, aspect, 0.00001, 20000);
   cameraPerspectiveHelper = new THREE.CameraHelper(cameraPerspective);
+
   scene.add(cameraPerspectiveHelper);
 
   // counteract different front orientation of cameras vs rig
 
   cameraPerspective.rotation.y = Math.PI;
-  cameraPerspective.rotation.z = (-38 * Math.PI) / 100;
+  // cameraPerspective.rotation.z = angleCorrection;
 
-  cameraRig = new THREE.Group();
+  // cameraPanX = cameraPerspective.rotation.x;
+  // cameraPanY = cameraPerspective.rotation.y;
 
   cameraRig.add(cameraPerspective);
 
@@ -252,6 +261,7 @@ function init(): void {
 
   window.addEventListener("resize", onWindowResize);
   document.addEventListener("keydown", onKeyDown);
+  document.addEventListener("mousemove", onMouseMove);
 }
 
 //
@@ -276,9 +286,14 @@ function onKeyDown(event: KeyboardEvent): void {
   }
 }
 
+function onMouseMove(event: MouseEvent): void {
+  mouseX = (2 * event.clientX) / document.body.offsetWidth - 1;
+  mouseY = (2 * event.clientY) / document.body.offsetHeight - 1;
+}
+
 function onWindowResize(): void {
   SCREEN_WIDTH = window.innerWidth;
-  SCREEN_HEIGHT = window.innerHeight;
+  SCREEN_HEIGHT = document.body.offsetHeight;
   aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
 
   renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -299,12 +314,13 @@ function animate(): void {
 
   animationTime += paused ? 0 : delta * speed;
 
-  system.animate(animationTime);
+  const angleDeviation = 1;
 
-  cameraPerspective.fov = 80;
-  cameraPerspective.near = 0.0001;
-  cameraPerspective.far = 20000;
-  cameraPerspective.updateProjectionMatrix();
+  cameraPanX += Math.abs(mouseX) > 0.3 ? angleDeviation * mouseX : 0;
+  cameraPanY += Math.abs(mouseY) > 0.4 ? (-angleDeviation * mouseY) / 2 : 0;
+  cameraPanY = Math.min(Math.max(cameraPanY, 15), 80);
+
+  system.animate(animationTime);
 
   cameraPerspectiveHelper.update();
   cameraPerspectiveHelper.visible = false;
@@ -312,13 +328,49 @@ function animate(): void {
   camera.position.x = J.position.x;
   camera.position.y = J.position.y;
 
-  cameraRig.position.x = cities[0].body.position.x;
-  cameraRig.position.y = cities[0].body.position.y;
-  cameraRig.position.z = cities[0].body.position.z;
+  cameraRig.position.set(...cities[0].body.position.toArray());
 
-  cameraRig.lookAt(cities[1].body.position);
+  const N = new THREE.Vector3()
+    .add(cities[0].body.position)
+    .sub(E.position)
+    .normalize();
 
-  renderer.setClearColor(0x000000, 1);
+  const C = new THREE.Vector3()
+    .add(cities[1].body.position)
+    .sub(cities[0].body.position)
+    .projectOnPlane(N)
+    .normalize();
+
+  const P = new THREE.Vector3().crossVectors(N, C).normalize();
+
+  const PW = Math.cos((Math.PI / 180) * cameraPanX);
+  const CW = Math.sin((Math.PI / 180) * cameraPanX);
+  const FW = Math.cos((Math.PI / 180) * cameraPanY);
+  const NW = Math.sin((Math.PI / 180) * cameraPanY);
+
+  const V = new THREE.Vector3()
+    .add(P.multiplyScalar(PW * FW))
+    .add(C.multiplyScalar(CW * FW))
+    .add(N.multiplyScalar(NW))
+    .add(cities[1].body.position);
+
+  const U = new THREE.Vector3()
+    .add(cities[0].body.position)
+    .add(N.multiplyScalar(1000000));
+
+  cameraRig.up.set(U.x, U.y, U.z);
+  cameraRig.lookAt(V);
+
+  // cameraPerspective.rotation.z = -angleCorrection;
+
+  cameraPerspective.updateProjectionMatrix();
+
+  // cameraPerspective.setRotationFromQuaternion(
+  //   new THREE.Quaternion().slerp(Right, cameraPanX)
+  // );
+  // cameraRig.setRotationFromQuaternion(Up);
+
+  // cameraRig.renderer.setClearColor(0x000000, 1);s
   renderer.setScissor(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
   renderer.setViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
   renderer.render(scene, cameraPerspective);
