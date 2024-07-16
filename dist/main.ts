@@ -368,7 +368,7 @@ function animate(): void {
   renderer.setViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
   renderer.render(scene, cameraPerspective);
 
-  renderer.setClearColor(0x111111, 1);
+  renderer.setClearColor(0x000000, 1);
   renderer.setScissor(
     (7 * SCREEN_WIDTH) / 8,
     0,
