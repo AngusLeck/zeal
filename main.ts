@@ -221,11 +221,21 @@ function init(): void {
 
   scene.castShadow = true;
 
-  camera = new THREE.PerspectiveCamera(60, aspect / 2, 1, 10000);
+  camera = new THREE.PerspectiveCamera(
+    60,
+    aspect > 1 ? aspect / 2 : aspect,
+    1,
+    10000
+  );
   camera.position.z = 50;
 
   cameraRig = new THREE.Group();
-  cameraPerspective = new THREE.PerspectiveCamera(60, aspect, 0.00001, 20000);
+  cameraPerspective = new THREE.PerspectiveCamera(
+    aspect > 1 ? 60 : 90,
+    aspect,
+    0.00001,
+    20000
+  );
   cameraPerspectiveHelper = new THREE.CameraHelper(cameraPerspective);
 
   cameraRig.add(probe);
