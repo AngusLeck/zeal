@@ -28,7 +28,7 @@ let cameraPanX = 90;
 let cameraPanY = 20;
 
 // time in seconds
-let animationTime = 0;
+let animationTime = 6;
 let realTime = Date.now();
 let paused = false;
 let speed = 1;
@@ -58,7 +58,7 @@ const cities: Satellite[] = [
     body: new BodyOnRails(
       {
         color: "red",
-        emissiveIntensity: 100,
+        emissiveIntensity: 0,
         mass: 10,
         radius: 1e6,
       },
@@ -74,7 +74,7 @@ const cities: Satellite[] = [
     body: new BodyOnRails(
       {
         color: "blue",
-        emissiveIntensity: 1,
+        emissiveIntensity: 0,
         mass: 10,
         radius: 1,
       },
@@ -96,8 +96,24 @@ const E = new BodyOnRails(
   120
 );
 
+const shell = new THREE.Mesh(
+  new THREE.SphereGeometry(0.1, 100, 100),
+  new THREE.MeshBasicMaterial({
+    // blendColor: 0x91c1ff,
+    color: 0x91c1ff,
+    opacity: 0,
+    // reflectivity: 10,
+    transparent: true,
+    side: THREE.BackSide,
+  })
+);
+
+shell.scale.x = -1;
+
+shell.receiveShadow = true;
+
 const J = new BodyOnRails(
-  { radius: 7e7, mass: 1e29 },
+  { radius: 7e7, mass: 1e29, emissiveIntensity: 0 },
   [
     {
       body: E,
@@ -182,6 +198,19 @@ const system = new BodyOnRails(
   ]
 );
 
+const sunVectors = [
+  new THREE.Vector3(0, 0, 1),
+  new THREE.Vector3(0, 1, 0),
+  new THREE.Vector3(1, 0, 0),
+  new THREE.Vector3(0, 0, -1),
+  new THREE.Vector3(0, -1, 0),
+  new THREE.Vector3(-1, 0, 0),
+].map((v) => v.multiplyScalar(system.scaledRadius * 1.1));
+
+const probe = new THREE.LightProbe(new THREE.SphericalHarmonics3(), 1000);
+probe.receiveShadow = true;
+probe.layers.enableAll();
+
 init();
 
 function init(): void {
@@ -198,6 +227,9 @@ function init(): void {
   cameraRig = new THREE.Group();
   cameraPerspective = new THREE.PerspectiveCamera(60, aspect, 0.00001, 20000);
   cameraPerspectiveHelper = new THREE.CameraHelper(cameraPerspective);
+
+  cameraRig.add(probe);
+  cameraPerspective.add(shell);
 
   scene.add(cameraPerspectiveHelper);
 
@@ -367,6 +399,46 @@ function animate(): void {
   renderer.setScissor(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
   renderer.setViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
   renderer.render(scene, cameraPerspective);
+
+  const homeVector = new THREE.Vector3()
+    .copy(cameraRig.position)
+    .multiplyScalar(-1);
+
+  const dayPercentage =
+    sunVectors
+      .map(
+        (sunVector) =>
+          new THREE.Raycaster(
+            cameraRig.position,
+            new THREE.Vector3().copy(sunVector).add(homeVector).normalize()
+          )
+      )
+      .map((cast) => !cast.intersectObject(J).length)
+      .filter(Boolean).length / 6;
+
+  const angleToSun = homeVector.angleTo(U);
+
+  const nightAngle = Math.PI / 2 + Math.PI / 10;
+  const sunSetAngle = Math.PI / 2;
+  const dayAngle = Math.PI / 2 - Math.PI / 10;
+
+  if (angleToSun > nightAngle) {
+    //night
+    shell.material.opacity = 0;
+  } else if (angleToSun > sunSetAngle) {
+    // sunrise(set)
+    shell.material.color.set(0xfa8072);
+    shell.material.opacity =
+      ((nightAngle - angleToSun) / (nightAngle - sunSetAngle)) *
+      dayPercentage *
+      0.2;
+  } else {
+    // day
+    shell.material.color.set(0x91c1ff);
+    shell.material.opacity =
+      (0.2 + 0.15 * ((sunSetAngle - angleToSun) / (sunSetAngle - dayAngle))) *
+      dayPercentage;
+  }
 
   renderer.setClearColor(0x000000, 1);
   renderer.setScissor(
