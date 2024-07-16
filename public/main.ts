@@ -25,7 +25,7 @@ let cameraRig: THREE.Group;
 let cameraPerspective: THREE.PerspectiveCamera;
 let cameraPerspectiveHelper: THREE.CameraHelper;
 let cameraPanX = 90;
-let cameraPanY = 30;
+let cameraPanY = 20;
 
 // time in seconds
 let animationTime = 0;
@@ -202,12 +202,7 @@ function init(): void {
   scene.add(cameraPerspectiveHelper);
 
   // counteract different front orientation of cameras vs rig
-
   cameraPerspective.rotation.y = Math.PI;
-  // cameraPerspective.rotation.z = angleCorrection;
-
-  // cameraPanX = cameraPerspective.rotation.x;
-  // cameraPanY = cameraPerspective.rotation.y;
 
   cameraRig.add(cameraPerspective);
 
@@ -261,7 +256,7 @@ function init(): void {
 
   window.addEventListener("resize", onWindowResize);
   document.addEventListener("keydown", onKeyDown);
-  document.addEventListener("mousemove", onMouseMove);
+  document.addEventListener("wheel", onWheel);
 }
 
 //
@@ -286,9 +281,9 @@ function onKeyDown(event: KeyboardEvent): void {
   }
 }
 
-function onMouseMove(event: MouseEvent): void {
-  mouseX = (2 * event.clientX) / document.body.offsetWidth - 1;
-  mouseY = (2 * event.clientY) / document.body.offsetHeight - 1;
+function onWheel(event: WheelEvent): void {
+  mouseX = Math.min(Math.max(event.deltaX / 30, -1), 1);
+  mouseY = Math.min(Math.max(event.deltaY / 30, -1), 1);
 }
 
 function onWindowResize(): void {
@@ -306,19 +301,25 @@ function onWindowResize(): void {
 }
 
 function animate(): void {
-  //   const r = 1509 + (((Date.now() / 1000) % 10) - 5);
-
   const currentTime = Date.now();
   const delta = (currentTime - realTime) / 1000;
   realTime = currentTime;
 
   animationTime += paused ? 0 : delta * speed;
 
-  const angleDeviation = 1;
+  const angleDeviation = 100;
 
-  cameraPanX += Math.abs(mouseX) > 0.3 ? angleDeviation * mouseX : 0;
-  cameraPanY += Math.abs(mouseY) > 0.4 ? (-angleDeviation * mouseY) / 2 : 0;
+  cameraPanX += angleDeviation * mouseX * delta;
+  cameraPanY += -angleDeviation * mouseY * delta;
   cameraPanY = Math.min(Math.max(cameraPanY, 15), 80);
+
+  mouseX *= 0.95;
+  mouseY *= 0.95;
+
+  if (mouseX ** 2 + mouseY ** 2 < 0.001) {
+    mouseX = 0;
+    mouseY = 0;
+  }
 
   system.animate(animationTime);
 
@@ -361,16 +362,8 @@ function animate(): void {
   cameraRig.up.set(U.x, U.y, U.z);
   cameraRig.lookAt(V);
 
-  // cameraPerspective.rotation.z = -angleCorrection;
-
   cameraPerspective.updateProjectionMatrix();
 
-  // cameraPerspective.setRotationFromQuaternion(
-  //   new THREE.Quaternion().slerp(Right, cameraPanX)
-  // );
-  // cameraRig.setRotationFromQuaternion(Up);
-
-  // cameraRig.renderer.setClearColor(0x000000, 1);s
   renderer.setScissor(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
   renderer.setViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
   renderer.render(scene, cameraPerspective);

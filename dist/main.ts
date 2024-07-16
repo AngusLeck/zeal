@@ -25,7 +25,7 @@ let cameraRig: THREE.Group;
 let cameraPerspective: THREE.PerspectiveCamera;
 let cameraPerspectiveHelper: THREE.CameraHelper;
 let cameraPanX = 90;
-let cameraPanY = 30;
+let cameraPanY = 20;
 
 // time in seconds
 let animationTime = 0;
