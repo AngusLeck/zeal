@@ -299,6 +299,10 @@ function init(): void {
   window.addEventListener("resize", onWindowResize);
   document.addEventListener("keydown", onKeyDown);
   document.addEventListener("wheel", onWheel);
+  document.addEventListener("touchstart", onTouchStartOrEnd);
+  document.addEventListener("touchend", onTouchStartOrEnd);
+  document.addEventListener("touchcancel", onTouchStartOrEnd);
+  document.addEventListener("touchmove", onTouchMove);
 }
 
 //
@@ -324,8 +328,57 @@ function onKeyDown(event: KeyboardEvent): void {
 }
 
 function onWheel(event: WheelEvent): void {
-  mouseX = Math.min(Math.max(event.deltaX / 30, -1), 1);
-  mouseY = Math.min(Math.max(event.deltaY / 30, -1), 1);
+  setViewMovementVarsFromDeltas(event);
+}
+
+let lastTouchCoordinates: { x: number; y: number } | undefined;
+
+function onTouchStartOrEnd(event: TouchEvent): void {
+  if (event.touches.length === 0) {
+    lastTouchCoordinates = undefined;
+  }
+  lastTouchCoordinates = lastTouchCoordinates ?? getTouchCoordinates(event);
+}
+
+function onTouchMove(event: TouchEvent): void {
+  const touchCoordinates = getTouchCoordinates(event);
+
+  if (lastTouchCoordinates) {
+    setViewMovementVarsFromDeltas({
+      deltaX: (lastTouchCoordinates.x - touchCoordinates.x) * 2,
+      deltaY: (lastTouchCoordinates.y - touchCoordinates.y) * 2,
+    });
+  }
+
+  lastTouchCoordinates = touchCoordinates;
+}
+
+function getTouchCoordinates(event: TouchEvent): { x: number; y: number } {
+  const touches = [...event.touches];
+
+  return touches
+    .map((touch) => ({
+      x: touch.clientX,
+      y: touch.clientY,
+    }))
+    .reduce(
+      ({ x: averageX, y: averageY }, { x, y }) => ({
+        x: averageX + x / touches.length,
+        y: averageY + y / touches.length,
+      }),
+      { x: 0, y: 0 }
+    );
+}
+
+function setViewMovementVarsFromDeltas({
+  deltaX,
+  deltaY,
+}: {
+  deltaX: number;
+  deltaY: number;
+}): void {
+  mouseX = Math.min(Math.max(deltaX / 30, -1), 1);
+  mouseY = Math.min(Math.max(deltaY / 30, -1), 1);
 }
 
 function onWindowResize(): void {
