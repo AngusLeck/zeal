@@ -227,7 +227,7 @@ function init(): void {
     60,
     aspect > 1 ? aspect / 2 : aspect,
     1,
-    RealDistance.Stars / RealDistance.Model
+    ScaledDistance.Stars
   );
   camera.position.z = 50;
 
@@ -236,7 +236,7 @@ function init(): void {
     aspect > 1 ? 60 : 90,
     aspect,
     0.00001,
-    RealDistance.Stars / RealDistance.Model
+    ScaledDistance.Stars
   );
   cameraPerspectiveHelper = new THREE.CameraHelper(cameraPerspective);
 
@@ -271,26 +271,31 @@ function init(): void {
   const geometry = new THREE.BufferGeometry();
   const vertices = [];
 
+  const starAllowance = 3000;
+
   // milky-way
-  for (let i = 0; i < 30000; i++) {
-    const theta = gaussianRandom(0, Math.PI / 8);
-    const phi = Math.acos(2 * gaussianRandom(0.5, 0.03) - 1);
+  for (let i = 0; i < starAllowance; i++) {
+    const m = gaussianRandom(0.5, 0.25);
+    const n = 1 - m;
+    const phi = Math.acos(2 * gaussianRandom(0.3, 0.03) - 1);
     const r = THREE.MathUtils.randFloat(
       ScaledDistance.LightHour,
       ScaledDistance.Stars
     );
+    const a = -0.3 * Math.PI;
+    const b = 0.4 * Math.PI;
 
-    vertices.push(r * Math.cos(theta) * Math.sin(phi)); // x
-    vertices.push(r * Math.sin(theta) * Math.sin(phi)); // y
+    vertices.push(r * (m * Math.cos(a) + n * Math.cos(b)) * Math.sin(phi)); // x
+    vertices.push(r * (m * Math.sin(a) + n * Math.sin(b)) * Math.sin(phi)); // y
     vertices.push(r * Math.cos(phi)); // z
   }
 
   // other stars
-  for (let i = 0; i < 30000; i++) {
+  for (let i = 0; i < starAllowance; i++) {
     const theta = 2 * Math.PI * Math.random();
     const phi = Math.acos(2 * Math.random() - 1);
     const r = THREE.MathUtils.randFloat(
-      ScaledDistance.LightHour,
+      40 * ScaledDistance.LightMinute,
       ScaledDistance.Stars
     );
 
@@ -306,7 +311,10 @@ function init(): void {
 
   const particles = new THREE.Points(
     geometry,
-    new THREE.PointsMaterial({ color: 0x999999 })
+    new THREE.PointsMaterial({
+      color: 0x999999,
+      size: ScaledDistance.LightSecond * 3,
+    })
   );
   scene.add(particles);
 
