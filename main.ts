@@ -271,8 +271,11 @@ function init(): void {
   const geometry = new THREE.BufferGeometry();
   const vertices = [];
 
+  const onMobile = navigator.userAgent.includes("Mobile");
+  const starAllowance = onMobile ? 3000 : 30000;
+
   // milky-way
-  for (let i = 0; i < 30000; i++) {
+  for (let i = 0; i < starAllowance; i++) {
     const theta = gaussianRandom(0, Math.PI / 8);
     const phi = Math.acos(2 * gaussianRandom(0.5, 0.03) - 1);
     const r = THREE.MathUtils.randFloat(
@@ -286,7 +289,7 @@ function init(): void {
   }
 
   // other stars
-  for (let i = 0; i < 30000; i++) {
+  for (let i = 0; i < starAllowance; i++) {
     const theta = 2 * Math.PI * Math.random();
     const phi = Math.acos(2 * Math.random() - 1);
     const r = THREE.MathUtils.randFloat(
