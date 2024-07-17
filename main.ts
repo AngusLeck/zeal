@@ -257,14 +257,14 @@ function init(): void {
   const jupiterLight = new THREE.PointLight(0xff8822, 20);
   J.add(jupiterLight);
 
-  const dirlight = new THREE.SpotLight(0xffffff, 180000000, 0, Math.PI / 500);
+  const dirlight = new THREE.SpotLight(0xffffff, 180000000, 0, Math.PI / 2000);
 
   dirlight.target = J;
   dirlight.castShadow = true;
-  dirlight.shadow.mapSize.width = 1000;
-  dirlight.shadow.mapSize.height = 1000;
-  dirlight.shadow.camera.near = 500;
-  dirlight.shadow.camera.far = 10000;
+  dirlight.shadow.mapSize.width = 1200;
+  dirlight.shadow.mapSize.height = 1200;
+  dirlight.shadow.camera.near = 7.5 * ScaledDistance.LightMinute;
+  dirlight.shadow.camera.far = 8.5 * ScaledDistance.LightMinute;
 
   scene.add(dirlight);
 
