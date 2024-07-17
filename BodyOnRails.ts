@@ -8,11 +8,12 @@ import {
   SphereGeometry,
   Vector3,
 } from "three";
+import { RealDistance } from "./distance";
 
 const colors = Object.keys(Color.NAMES);
 
 const G = 6.674e-11; /** gravitational constant */
-const lengthScale = 1e7;
+const lengthScale = RealDistance.Model;
 const timeScale = 2e3;
 
 export interface Satellite {
