@@ -2,6 +2,8 @@
 import * as THREE from "three";
 
 import { BodyOnRails, Satellite } from "./BodyOnRails";
+import { RealDistance, ScaledDistance } from "./distance";
+import { gaussianRandom } from "./gaussianRandom";
 
 // screen variables
 let SCREEN_WIDTH = window.innerWidth;
@@ -139,7 +141,7 @@ const system = new BodyOnRails(
   [
     {
       body: J,
-      radius: 8 * 60e8,
+      radius: 8 * RealDistance.LightMinute,
       direction: "clockwise",
       plane: "coplanar",
       phase: 0,
@@ -225,7 +227,7 @@ function init(): void {
     60,
     aspect > 1 ? aspect / 2 : aspect,
     1,
-    10000
+    RealDistance.Stars / RealDistance.Model
   );
   camera.position.z = 50;
 
@@ -234,7 +236,7 @@ function init(): void {
     aspect > 1 ? 60 : 90,
     aspect,
     0.00001,
-    20000
+    RealDistance.Stars / RealDistance.Model
   );
   cameraPerspectiveHelper = new THREE.CameraHelper(cameraPerspective);
 
@@ -255,24 +257,46 @@ function init(): void {
   const jupiterLight = new THREE.PointLight(0xff8822, 20);
   J.add(jupiterLight);
 
-  const dirlight = new THREE.SpotLight(0xffffff, 20000000, 0, Math.PI / 500);
+  const dirlight = new THREE.SpotLight(0xffffff, 180000000, 0, Math.PI / 2000);
 
   dirlight.target = J;
   dirlight.castShadow = true;
-  dirlight.shadow.mapSize.width = 1000;
-  dirlight.shadow.mapSize.height = 1000;
-  dirlight.shadow.camera.near = 500;
-  dirlight.shadow.camera.far = 10000;
+  dirlight.shadow.mapSize.width = 1200;
+  dirlight.shadow.mapSize.height = 1200;
+  dirlight.shadow.camera.near = 7.5 * ScaledDistance.LightMinute;
+  dirlight.shadow.camera.far = 8.5 * ScaledDistance.LightMinute;
 
   scene.add(dirlight);
 
   const geometry = new THREE.BufferGeometry();
   const vertices = [];
 
+  // milky-way
   for (let i = 0; i < 30000; i++) {
-    vertices.push(THREE.MathUtils.randFloatSpread(30000)); // x
-    vertices.push(THREE.MathUtils.randFloatSpread(30000)); // y
-    vertices.push(THREE.MathUtils.randFloatSpread(30000)); // z
+    const theta = gaussianRandom(0, Math.PI / 8);
+    const phi = Math.acos(2 * gaussianRandom(0.5, 0.03) - 1);
+    const r = THREE.MathUtils.randFloat(
+      ScaledDistance.LightHour,
+      ScaledDistance.Stars
+    );
+
+    vertices.push(r * Math.cos(theta) * Math.sin(phi)); // x
+    vertices.push(r * Math.sin(theta) * Math.sin(phi)); // y
+    vertices.push(r * Math.cos(phi)); // z
+  }
+
+  // other stars
+  for (let i = 0; i < 30000; i++) {
+    const theta = 2 * Math.PI * Math.random();
+    const phi = Math.acos(2 * Math.random() - 1);
+    const r = THREE.MathUtils.randFloat(
+      ScaledDistance.LightHour,
+      ScaledDistance.Stars
+    );
+
+    vertices.push(r * Math.cos(theta) * Math.sin(phi)); // x
+    vertices.push(r * Math.sin(theta) * Math.sin(phi)); // y
+    vertices.push(r * Math.cos(phi)); // z
   }
 
   geometry.setAttribute(
@@ -304,8 +328,6 @@ function init(): void {
   document.addEventListener("touchcancel", onTouchStartOrEnd);
   document.addEventListener("touchmove", onTouchMove);
 }
-
-//
 
 function onKeyDown(event: KeyboardEvent): void {
   console.log(JSON.stringify(event));
