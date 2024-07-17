@@ -345,8 +345,8 @@ function onTouchMove(event: TouchEvent): void {
 
   if (lastTouchCoordinates) {
     setViewMovementVarsFromDeltas({
-      deltaX: (lastTouchCoordinates.x - touchCoordinates.x) * 2,
-      deltaY: (lastTouchCoordinates.y - touchCoordinates.y) * 2,
+      deltaX: lastTouchCoordinates.x - touchCoordinates.x,
+      deltaY: lastTouchCoordinates.y - touchCoordinates.y,
     });
   }
 
