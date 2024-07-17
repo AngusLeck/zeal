@@ -272,7 +272,7 @@ function init(): void {
   const vertices = [];
 
   const onMobile = navigator.userAgent.includes("Mobile");
-  const starAllowance = 15000;
+  const starAllowance = onMobile ? 3000 : 3000;
 
   // milky-way
   for (let i = 0; i < starAllowance; i++) {
@@ -313,7 +313,7 @@ function init(): void {
       color: 0x999999,
       size: onMobile
         ? ScaledDistance.LightSecond * 4
-        : ScaledDistance.LightSecond * 2,
+        : ScaledDistance.LightSecond * 4,
     })
   );
   scene.add(particles);
