@@ -8,13 +8,10 @@ import {
   SphereGeometry,
   Vector3,
 } from "three";
-import { RealDistance } from "./distance";
+import { RealDistance, RealTime } from "../constants";
+import { orbitalPeriod } from "../utils/orbitalPeriod";
 
 const colors = Object.keys(Color.NAMES);
-
-const G = 6.674e-11; /** gravitational constant */
-const lengthScale = RealDistance.Model;
-const timeScale = 2e3;
 
 export interface Satellite {
   body: BodyOnRails;
@@ -55,12 +52,12 @@ export class BodyOnRails extends Mesh {
     },
     private satellites: Satellite[] = [],
     material?: Material,
-    private day = Math.random() * 60 * 60 * 48,
+    public day = Math.random() * 60 * 60 * 48,
     heightSegments = 30
   ) {
     super(
       new SphereGeometry(
-        radius / lengthScale,
+        radius / RealDistance.Model,
         heightSegments * 2,
         heightSegments
       ),
@@ -73,19 +70,21 @@ export class BodyOnRails extends Mesh {
         })
     );
 
-    this.scaledRadius = radius / lengthScale;
+    this.scaledRadius = radius / RealDistance.Model;
 
     satellites.forEach((satellite) => {
       satellite.period = satellite.geostationary
         ? this.day
         : satellite.tidallyLocked
         ? satellite.body.day
-        : (2 * Math.PI * satellite.radius ** (3 / 2)) / Math.sqrt(G * mass);
+        : orbitalPeriod(mass, satellite.radius);
     });
+
+    // r = (T**2 * G / 4Pi**2)**1/3
   }
 
   public animate(time: number): void {
-    const scaledTime = timeScale * time;
+    const scaledTime = RealTime.Model * time;
     this.setRotationFromAxisAngle(
       new Vector3(0, 1, 0),
       (-2 * Math.PI * scaledTime) / this.day
@@ -105,17 +104,18 @@ export class BodyOnRails extends Mesh {
       const twoPiOnPeriod = period ? (2 * Math.PI) / period : 1;
 
       const X =
-        (radius / lengthScale) *
+        (radius / RealDistance.Model) *
         Math.cos(twoPiOnPeriod * signedTime - (phase ?? 0));
       const Y =
-        (radius / lengthScale) *
+        (radius / RealDistance.Model) *
         Math.sin(twoPiOnPeriod * signedTime - (phase ?? 0));
 
       switch (plane) {
         case "perpendicular":
           body.position.x = this.position.x + X;
           body.position.y =
-            this.position.y + (impossibleDisplacement ?? 0) / lengthScale;
+            this.position.y +
+            (impossibleDisplacement ?? 0) / RealDistance.Model;
           body.position.z = this.position.z + Y;
           break;
         case "coplanar":
@@ -123,7 +123,8 @@ export class BodyOnRails extends Mesh {
           body.position.x = this.position.x + X;
           body.position.y = this.position.y + Y;
           body.position.z =
-            this.position.z + (impossibleDisplacement ?? 0) / lengthScale;
+            this.position.z +
+            (impossibleDisplacement ?? 0) / RealDistance.Model;
           break;
       }
 
